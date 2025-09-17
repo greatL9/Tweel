@@ -4,11 +4,15 @@ import Widgets from "./components/Widgets";
 
 export default async function Home() {
   const newsResults = await getNews();
+  const randomUsersResults = await getUsers();
   return (
     <main className="flex min-h-screen mx-auto">
       <Sidebar />
       <Feed />
-      <Widgets newsResults={newsResults} />
+      <Widgets
+        newsResults={newsResults}
+        randomUsersResults={randomUsersResults}
+      />
     </main>
   );
 }
@@ -21,3 +25,14 @@ export async function getNews() {
 
   return newsResults;
 }
+
+export async function getUsers() {
+  const res = await fetch(
+    `https://randomuser.me/api/?results=30&inc=name,login,picture`
+  );
+  const randomUsersResults = await res.json();
+
+  return randomUsersResults;
+}
+
+//
