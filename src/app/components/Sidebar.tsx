@@ -13,7 +13,7 @@ import { EnvelopeIcon } from "@heroicons/react/24/outline";
 
 export default function Sidebar() {
   return (
-    <div className="hidden sm:flex flex-col p-2 xl:items-start fixed h-full">
+    <div className="hidden sm:flex flex-col p-2 xl:items-start fixed h-full xl:ml-24">
       <div className="hoverEffect p-2 hover:bg-purple-100 xl:px-3">
         <Image src="/logo.png" width="50" height="50" alt="logo" priority />
       </div>
