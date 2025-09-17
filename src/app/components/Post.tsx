@@ -49,7 +49,7 @@ export default function Post({ post }: PostProps) {
         <Image
           src={post.img}
           alt="post"
-          width="800"
+          width="8000"
           height="50"
           className="rounded-2xl mr-2 w-full h-auto"
         />
