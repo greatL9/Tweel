@@ -7,8 +7,8 @@ export default function Input() {
       <Image
         src="/me.jpeg"
         alt="user"
-        width="44"
-        height="44"
+        width={44}
+        height={44}
         className="rounded-full w-11 h-11 cursor-pointer hover:brightness-95"
       />
       <div className="w-full divide-y divide-gray-200">

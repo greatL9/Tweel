@@ -14,8 +14,8 @@ import { EnvelopeIcon } from "@heroicons/react/24/outline";
 export default function Sidebar() {
   return (
     <div className="hidden sm:flex flex-col p-2 xl:items-start fixed h-full xl:ml-24">
-      <div className="hoverEffect p-2 hover:bg-purple-100 xl:px-3">
-        <Image src="/logo.png" width="50" height="50" alt="logo" priority />
+      <div className="hoverEffect p-2 hover:bg-white xl:px-3">
+        <Image src="/logo.png" width={90} height={90} alt="logo" priority />
       </div>
       <div className="mt-4 mb-2.5 xl:items-start">
         <Sidebaritem text="Home" icon={<HomeIcon className="h-7" />} active />
@@ -43,8 +43,8 @@ export default function Sidebar() {
         <Image
           src="/me.jpeg"
           alt="user"
-          width="50"
-          height="50"
+          width={50}
+          height={50}
           className="rounded-full w-10 h-10 xl:mr-2"
         />
         <div className="leading-5 hidden xl:inline">

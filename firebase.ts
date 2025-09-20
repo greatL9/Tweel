@@ -1,10 +1,9 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { get } from "http";
 
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "tweel-1ccbc.firebaseapp.com",
   projectId: "tweel-1ccbc",
   storageBucket: "tweel-1ccbc.firebasestorage.app",

@@ -26,9 +26,9 @@ export default function Post({ post }: PostProps) {
       <Image
         src={post.userImg}
         alt="user"
-        width="44"
-        height="44"
-        className="rounded-full w-11 h-11 mr-4 cursor-pointer hover:brightness-95"
+        width={50}
+        height={50}
+        className="rounded-full w-10 h-10 mr-4 cursor-pointer hover:brightness-95"
       />
       <div>
         <div className="flex items-center justify-between">
