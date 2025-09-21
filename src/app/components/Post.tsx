@@ -49,8 +49,8 @@ export default function Post({ post }: PostProps) {
         <Image
           src={post.img}
           alt="post"
-          width="8000"
-          height="50"
+          width={600}
+          height={300}
           className="rounded-2xl mr-2 w-full h-auto"
         />
         <div className="flex justify-between text-gray-500 p-2 mt-1">
