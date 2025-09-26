@@ -3,17 +3,9 @@ import { FaceSmileIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
-import { db, storage } from "../../../firebase";
-import {
-  addDoc,
-  collection,
-  doc,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
 import { useRef } from "react";
-import { getDownloadURL, ref, uploadString } from "firebase/storage";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { supabase } from "@/supabaseClient";
 
 export default function Input() {
   const { data: session } = useSession();
@@ -22,23 +14,17 @@ export default function Input() {
   const filePickerRef = useRef<HTMLInputElement>(null);
 
   const sendPost = async () => {
-    const docRef = await addDoc(collection(db, "posts"), {
-      id: session?.user.id,
-      text: input,
-      userImg: session?.user.image,
-      timestamp: serverTimestamp(),
-      name: session?.user.name,
-      username: session?.user.username,
-    });
-    const imageRef = ref(storage, `posts/${docRef.id}/image`);
-    if (selectedFile) {
-      await uploadString(imageRef, selectedFile, "data_url").then(async () => {
-        const downloadURL = await getDownloadURL(imageRef);
-        await updateDoc(doc(db, "posts", docRef.id), {
-          image: downloadURL,
-        });
-        setSelectedFile(null);
-      });
+    const { error } = await supabase.from("posts").insert([
+      {
+        user_id: session?.user?.id,
+        name: session?.user?.name,
+        user_name: session?.user?.username,
+        user_image: session?.user?.image,
+        text: input,
+      },
+    ]);
+    if (error) {
+      console.error("Error inserting post:", error);
     }
     setInput("");
     setSelectedFile(null);

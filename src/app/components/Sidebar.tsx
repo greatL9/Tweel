@@ -16,7 +16,6 @@ import { useRouter } from "next/navigation";
 
 export default function Sidebar() {
   const { data: session } = useSession();
-  console.log(session);
   const router = useRouter();
   return (
     <div className="hidden sm:flex flex-col p-2 xl:items-start fixed h-full xl:ml-24">
