@@ -11,12 +11,13 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { EnvelopeIcon } from "@heroicons/react/24/outline";
-import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "./SessionProvider";
 
 export default function Sidebar() {
-  const { data: session } = useSession();
+  const session = useSession();
   const router = useRouter();
+
   return (
     <div className="hidden sm:flex flex-col p-2 xl:items-start fixed h-full xl:ml-24">
       <div className="hoverEffect p-2 hover:bg-white xl:px-3">
@@ -61,16 +62,21 @@ export default function Sidebar() {
           </button>
           <div className="hoverEffect text-gray-700 flex items-center justify-center xl:justify-start mt-auto">
             <Image
-              onClick={() => signOut()}
-              src={session.user.image}
+              src={session.user.user_metadata?.picture}
               alt="user"
               width={50}
               height={50}
               className="rounded-full w-10 h-10 xl:mr-2"
             />
             <div className="leading-5 hidden xl:inline">
-              <h4 className="font-bold">{session.user.name}</h4>
-              <p className="text-gray-500">@{session.user.username}</p>
+              <h4 className="font-bold">{session.user.user_metadata?.name}</h4>
+              <p className="text-gray-500">
+                @
+                {session.user.user_metadata?.name
+                  .split(" ")
+                  .join("")
+                  .toLowerCase()}
+              </p>
             </div>
             <EllipsisHorizontalCircleIcon className="h-5 xl:ml-8 hidden xl:inline" />
           </div>

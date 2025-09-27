@@ -1,8 +1,16 @@
 "use client";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
+import { createClient } from "../../../utils/supabase/client";
 
 export default function Signin() {
+  const supabase = createClient();
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+    if (error) console.error("OAuth error", error);
+  };
+
   return (
     <div className="flex justify-center mt-20 space-x-4">
       <Image
@@ -28,7 +36,7 @@ export default function Signin() {
 
         <button
           className="bg-orange-500 rounded-lg text-white font-bold p-3 hover:bg-orange-600"
-          onClick={() => signIn("google", { callbackUrl: "/" })}
+          onClick={signInWithGoogle}
         >
           Sign in with Google
         </button>
