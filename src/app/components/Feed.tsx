@@ -1,28 +1,56 @@
+"use client";
 import { SparklesIcon } from "@heroicons/react/24/outline";
 import Input from "./Input";
 import Post from "./Post";
+import { useEffect, useState } from "react";
+import { createClient } from "../../../utils/supabase/client";
+
+interface Post {
+  id: string;
+  name: string;
+  user_name: string;
+  user_image: string;
+  image: string;
+  text: string;
+  created_at: string;
+  timestamp: string;
+}
+const supabase = createClient();
 
 export default function Feed() {
-  const posts = [
-    {
-      id: "1",
-      name: "Great Lucky",
-      username: "great",
-      userImg: "/me.jpeg",
-      img: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bmF0dXJlfGVufDB8fDB8fHww",
-      text: "nice view!",
-      timestamp: "2 hours ago",
-    },
-    {
-      id: "2",
-      name: "Grace Samuel",
-      username: "grace",
-      userImg: "/me.jpeg",
-      img: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fG5hdHVyZXxlbnwwfHwwfHx8MA%3D%3D://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bmF0dXJlfGVufDB8fDB8fHww",
-      text: "good view!",
-      timestamp: "2 days ago",
-    },
-  ];
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  const fetchPosts = async () => {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching posts:", error);
+    } else {
+      setPosts(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+    const subscription = supabase
+      .channel("public:posts")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "posts" },
+        (payload) => {
+          setPosts((prevPosts) => [payload.new as Post, ...prevPosts]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
   return (
     <div className="xl:ml-[370px] border-l border-r border-gray-200 xl:min-w-[576px] sm:ml-[73px] flex-grow max-w-xl">
       <div className="flex py-2 px-3 sticky top-0 z-50 bg-white border-b border-gray-200">

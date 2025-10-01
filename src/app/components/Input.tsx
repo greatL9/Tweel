@@ -54,7 +54,8 @@ export default function Input() {
           text: input,
         },
       ])
-      .select();
+      .select()
+      .single();
     if (error) {
       console.error("Error inserting post:", error.message);
     }
@@ -94,7 +95,7 @@ export default function Input() {
               <div className="relative">
                 <XMarkIcon
                   onClick={() => setSelectedFile(null)}
-                  className="h-7 absolute cursor-pointer text-black shadow-md shadow-white rounded-full"
+                  className="border h-7 absolute cursor-pointer text-black shadow-md border-white m-1 rounded-full"
                 />
                 <Image
                   src={URL.createObjectURL(selectedFile)}
