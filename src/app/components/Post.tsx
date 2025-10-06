@@ -9,8 +9,12 @@ import { EllipsisHorizontalCircleIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-
-dayjs.extend(relativeTime);
+import utc from "dayjs/plugin/utc";
+import { createClient } from "../../../utils/supabase/client";
+import { useSession } from "./SessionProvider";
+import { useEffect, useState } from "react";
+import { HeartIcon as HeartIconFilled } from "@heroicons/react/16/solid";
+import { useRouter } from "next/navigation";
 
 interface PostProps {
   post: {
@@ -24,7 +28,103 @@ interface PostProps {
   };
 }
 
+interface Like {
+  id: string;
+  post_id: string;
+  user_id: string;
+  user_name: string;
+}
+
 export default function Post({ post }: PostProps) {
+  const [likes, setLikes] = useState<Like[]>([]);
+  const [hasLiked, setHasLiked] = useState(false);
+  dayjs.extend(relativeTime);
+  dayjs.extend(utc);
+  const supabase = createClient();
+  const session = useSession();
+  const router = useRouter();
+  const name = session?.user.user_metadata?.name || "";
+  const username = name.split(" ").join("").toLowerCase();
+
+  useEffect(() => {
+    const fetchLikes = async () => {
+      const { data } = await supabase
+        .from("likes")
+        .select("*")
+        .eq("post_id", post.id);
+      if (data) setLikes(data);
+    };
+    fetchLikes();
+
+    const likesChannel = supabase
+      .channel(`likes-post-${post.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "likes",
+          filter: `post_id=eq.${post.id}`,
+        },
+        async () => {
+          const { data, error } = await supabase
+            .from("likes")
+            .select("*")
+            .eq("post_id", post.id);
+          if (!error && data) setLikes(data);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(likesChannel);
+    };
+  }, [post.id, supabase]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    setHasLiked(likes.some((like) => like.user_id === session.user.id));
+  }, [likes, session]);
+
+  const likePost = async () => {
+    if (!session?.user?.id) {
+      router.push("/signin");
+      return;
+    }
+
+    if (hasLiked) {
+      const { error } = await supabase
+        .from("likes")
+        .delete()
+        .eq("post_id", post.id)
+        .eq("user_id", session?.user.id);
+      if (error) {
+        console.error("Error unliking post:", error);
+      } else {
+        console.log("Post unliked!");
+      }
+      setHasLiked(false);
+      setLikes((prev) =>
+        prev.filter((like) => like.user_id !== session?.user.id)
+      );
+    } else {
+      const { error } = await supabase.from("likes").insert([
+        {
+          post_id: post.id,
+          user_id: session?.user.id,
+          user_name: username,
+        },
+      ]);
+
+      if (error) {
+        console.error("Error liking post:", error);
+      } else {
+        console.log("Post liked!");
+      }
+      setHasLiked(true);
+    }
+  };
+
   return (
     <div className="flex p-3 cursor-pointer border-b border-gray-200">
       <Image
@@ -45,7 +145,7 @@ export default function Post({ post }: PostProps) {
             </h4>
             <span className="text-sm sm:text-[15px]">@{post.user_name} - </span>
             <span className="text-sm sm:text-[15px] hover:underline">
-              {dayjs(post.timestamp).fromNow()}
+              {dayjs.utc(post.timestamp).fromNow()}
             </span>
           </div>
           <EllipsisHorizontalCircleIcon className="h-10 hoverEffect w-10 hover:bg-purple-100 hover:text-purple-500 p-2" />
@@ -72,10 +172,24 @@ export default function Post({ post }: PostProps) {
             className="h-9 w-9 hoverEffect p-2 hover:bg-red-100
             hover:text-red-600"
           />
-          <HeartIcon
-            className="h-9 w-9 hoverEffect p-2 hover:bg-red-100
-            hover:text-red-600"
-          />
+          <div className="flex items-center">
+            {hasLiked ? (
+              <HeartIconFilled
+                onClick={likePost}
+                className="h-9 w-9 hoverEffect p-2 hover:bg-red-100 text-red-600"
+              />
+            ) : (
+              <HeartIcon
+                onClick={likePost}
+                className="h-9 w-9 hoverEffect p-2 hover:bg-red-100 hover:text-red-600"
+              />
+            )}
+            {likes.length > 0 && (
+              <span className={`${hasLiked && "text-red-600"} text-sm`}>
+                {likes.length}
+              </span>
+            )}
+          </div>
           <ShareIcon
             className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
             hover:text-purple-500"

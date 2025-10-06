@@ -15,9 +15,9 @@ interface Post {
   created_at: string;
   timestamp: string;
 }
-const supabase = createClient();
 
 export default function Feed() {
+  const supabase = createClient();
   const [posts, setPosts] = useState<Post[]>([]);
 
   const fetchPosts = async () => {

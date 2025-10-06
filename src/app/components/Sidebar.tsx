@@ -13,11 +13,22 @@ import {
 import { EnvelopeIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useSession } from "./SessionProvider";
+import { createClient } from "../../../utils/supabase/client";
 
 export default function Sidebar() {
   const session = useSession();
   const router = useRouter();
 
+  const supabase = createClient();
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Sign out error", error);
+    } else {
+      console.log("Sign out successfully");
+    }
+  };
   return (
     <div className="hidden sm:flex flex-col p-2 xl:items-start fixed h-full xl:ml-24">
       <div className="hoverEffect p-2 hover:bg-white xl:px-3">
@@ -62,6 +73,7 @@ export default function Sidebar() {
           </button>
           <div className="hoverEffect text-gray-700 flex items-center justify-center xl:justify-start mt-auto">
             <Image
+              onClick={signOut}
               src={session.user.user_metadata?.picture}
               alt="user"
               width={50}

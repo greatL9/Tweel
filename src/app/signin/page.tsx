@@ -4,6 +4,7 @@ import { createClient } from "../../../utils/supabase/client";
 
 export default function Signin() {
   const supabase = createClient();
+
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
