@@ -186,16 +186,17 @@ export default function Post({ post }: PostProps) {
         <p className="text-gray-800 text-[15px] sm:text-[16px] mb-4">
           {post.text}
         </p>
-        <Image
-          src={post.image}
-          alt="post"
-          width={600}
-          height={300}
-          className="rounded-2xl mr-2 w-full h-auto"
-          crossOrigin="anonymous"
-          priority={false}
-          unoptimized
-        />
+        {post.image && (
+          <Image
+            src={post.image}
+            alt="post"
+            width={600}
+            height={300}
+            className="rounded-2xl mr-2 w-full h-auto"
+            crossOrigin="anonymous"
+            priority={false}
+          />
+        )}
         <div className="flex justify-between text-gray-500 p-2 mt-1">
           <ChatBubbleOvalLeftEllipsisIcon
             className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
