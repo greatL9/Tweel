@@ -22,6 +22,7 @@ interface PostProps {
     name: string;
     user_name: string;
     user_image: string;
+    user_id: string;
     image: string;
     text: string;
     timestamp: string;
@@ -125,6 +126,38 @@ export default function Post({ post }: PostProps) {
     }
   };
 
+  const deletePost = async () => {
+    const confirmDelete = confirm("Are you sure you want to delete this post?");
+    if (!confirmDelete) return;
+    try {
+      if (post.image) {
+        const match = post.image.match(/posts_images\/(.+)$/);
+        if (match && match[1]) {
+          const imagePath = decodeURIComponent(match[1]);
+
+          const { error: imageError } = await supabase.storage
+            .from("posts_images")
+            .remove([imagePath]);
+
+          if (imageError)
+            console.error("Error deleting image:", imageError.message);
+        } else {
+          console.warn("Could not extract image path from URL:", post.image);
+        }
+      }
+
+      const { error: postError } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", post.id)
+        .eq("user_id", session?.user.id);
+
+      if (postError) console.error("Error deleting post:", postError.message);
+    } catch (err) {
+      console.error("Unexpected delete error:", err);
+    }
+  };
+
   return (
     <div className="flex p-3 cursor-pointer border-b border-gray-200">
       <Image
@@ -168,10 +201,13 @@ export default function Post({ post }: PostProps) {
             className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
             hover:text-purple-500"
           />
-          <TrashIcon
-            className="h-9 w-9 hoverEffect p-2 hover:bg-red-100
+          {session?.user.id === post.user_id && (
+            <TrashIcon
+              onClick={deletePost}
+              className="h-9 w-9 hoverEffect p-2 hover:bg-red-100
             hover:text-red-600"
-          />
+            />
+          )}
           <div className="flex items-center">
             {hasLiked ? (
               <HeartIconFilled

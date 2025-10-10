@@ -10,6 +10,7 @@ interface Post {
   name: string;
   user_name: string;
   user_image: string;
+  user_id: string;
   image: string;
   text: string;
   created_at: string;
@@ -42,6 +43,15 @@ export default function Feed() {
         { event: "INSERT", schema: "public", table: "posts" },
         (payload) => {
           setPosts((prevPosts) => [payload.new as Post, ...prevPosts]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "posts" },
+        (payload) => {
+          setPosts((prevPosts) =>
+            prevPosts.filter((p) => p.id !== (payload.old as Post).id)
+          );
         }
       )
       .subscribe();
