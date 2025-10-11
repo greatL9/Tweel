@@ -19,7 +19,7 @@ export default async function Home() {
   );
 }
 
-export const getNews = async () => {
+const getNews = async () => {
   try {
     const res = await fetch(
       `https://saurav.tech/NewsAPI/top-headlines/category/business/us.json`
@@ -38,7 +38,7 @@ export const getNews = async () => {
   }
 };
 
-export const getUsers = async () => {
+const getUsers = async () => {
   try {
     const res = await fetch(
       `https://randomuser.me/api/?results=30&inc=name,login,picture`
