@@ -15,6 +15,8 @@ import { useSession } from "./SessionProvider";
 import { useEffect, useState } from "react";
 import { HeartIcon as HeartIconFilled } from "@heroicons/react/16/solid";
 import { useRouter } from "next/navigation";
+import { useAtom } from "jotai";
+import { commentState } from "./Comment";
 
 interface PostProps {
   post: {
@@ -39,6 +41,7 @@ interface Like {
 export default function Post({ post }: PostProps) {
   const [likes, setLikes] = useState<Like[]>([]);
   const [hasLiked, setHasLiked] = useState(false);
+  const [open, setOpen] = useAtom(commentState);
   dayjs.extend(relativeTime);
   dayjs.extend(utc);
   const supabase = createClient();
@@ -199,6 +202,7 @@ export default function Post({ post }: PostProps) {
         )}
         <div className="flex justify-between text-gray-500 p-2 mt-1">
           <ChatBubbleOvalLeftEllipsisIcon
+            onClick={() => setOpen(!open)}
             className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
             hover:text-purple-500"
           />

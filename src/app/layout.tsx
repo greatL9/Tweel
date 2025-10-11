@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SessionProvider } from "./components/SessionProvider";
 import { createClient } from "../../utils/supabase/server";
+import { SessionProvider } from "./components/SessionProvider";
 
 export const metadata: Metadata = {
   title: "Tweel",
@@ -21,7 +21,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SessionProvider session={session}>{children}</SessionProvider>
+        <SessionProvider session={session}>{children}</SessionProvider>;
       </body>
     </html>
   );

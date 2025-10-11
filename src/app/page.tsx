@@ -1,3 +1,4 @@
+import Comment from "./components/Comment";
 import Feed from "./components/Feed";
 import Sidebar from "./components/Sidebar";
 import Widgets from "./components/Widgets";
@@ -13,11 +14,12 @@ export default async function Home() {
         newsResults={newsResults}
         randomUsersResults={randomUsersResults}
       />
+      <Comment />
     </main>
   );
 }
 
-export async function getNews() {
+export const getNews = async () => {
   try {
     const res = await fetch(
       `https://saurav.tech/NewsAPI/top-headlines/category/business/us.json`
@@ -34,9 +36,9 @@ export async function getNews() {
     console.error("Error fetching news:", error);
     return { articles: [] };
   }
-}
+};
 
-export async function getUsers() {
+export const getUsers = async () => {
   try {
     const res = await fetch(
       `https://randomuser.me/api/?results=30&inc=name,login,picture`
@@ -53,4 +55,4 @@ export async function getUsers() {
     console.error("Error fetching users:", error);
     return { results: [] };
   }
-}
+};
