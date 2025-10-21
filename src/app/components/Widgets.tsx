@@ -108,7 +108,7 @@ function Widgets({
         </AnimatePresence>
         <button
           onClick={() => setRandomUserNumber(randomUserNumber + 3)}
-          className="text-purple-300 hover:text-purple-400"
+          className="text-purple-300 pl-4 pb-3 hover:text-purple-400"
         >
           Show More
         </button>
