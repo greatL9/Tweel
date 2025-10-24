@@ -38,9 +38,21 @@ interface Like {
   user_name: string;
 }
 
+interface Comment {
+  id: string;
+  name: string;
+  user_name: string;
+  user_image: string;
+  user_id: string;
+  image: string;
+  text: string;
+  timestamp: string;
+}
+
 export default function Post({ post }: PostProps) {
   const [likes, setLikes] = useState<Like[]>([]);
   const [hasLiked, setHasLiked] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [open, setOpen] = useAtom(commentState);
   const [postId, setPostId] = useAtom(postIdState);
 
@@ -61,9 +73,18 @@ export default function Post({ post }: PostProps) {
       if (!error && data) setLikes(data);
     };
 
+    const fetchComments = async () => {
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .eq("post_id", post.id);
+      if (!error && data) setComments(data);
+    };
+
+    fetchComments();
     fetchLikes();
 
-    const subscription = supabase
+    const likeSubscription = supabase
       .channel(`public:likes-post-${post.id}`)
       .on(
         "postgres_changes",
@@ -79,8 +100,23 @@ export default function Post({ post }: PostProps) {
       )
       .subscribe();
 
+    const commentSubscription = supabase
+      .channel(`public:comments-post-${post.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments",
+          filter: `post_id=eq.${post.id}`,
+        },
+        () => fetchComments()
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(subscription);
+      supabase.removeChannel(likeSubscription);
+      supabase.removeChannel(commentSubscription);
     };
   }, [post.id, supabase]);
 
@@ -96,35 +132,30 @@ export default function Post({ post }: PostProps) {
     }
 
     if (hasLiked) {
-      setHasLiked(false);
-      setLikes((prev) =>
-        prev.filter((like) => like.user_id !== session.user.id)
-      );
-
-      await supabase
+      const { error } = await supabase
         .from("likes")
         .delete()
         .eq("post_id", post.id)
-        .eq("user_id", session.user.id);
+        .eq("user_id", session?.user.id);
+
+      if (error) console.error("Error unliking post:", error);
+
+      setHasLiked(false);
+      setLikes((prev) =>
+        prev.filter((like) => like.user_id !== session?.user.id)
+      );
     } else {
-      setHasLiked(true);
-      setLikes((prev) => [
-        ...prev,
+      const { error } = await supabase.from("likes").insert([
         {
-          id: crypto.randomUUID(),
           post_id: post.id,
-          user_id: session.user.id,
+          user_id: session?.user.id,
           user_name: username,
         },
       ]);
 
-      await supabase.from("likes").insert([
-        {
-          post_id: post.id,
-          user_id: session.user.id,
-          user_name: username,
-        },
-      ]);
+      if (error) console.error("Error liking post:", error);
+
+      setHasLiked(true);
     }
   };
 
@@ -200,19 +231,24 @@ export default function Post({ post }: PostProps) {
           />
         )}
         <div className="flex justify-between text-gray-500 p-2 mt-1">
-          <ChatBubbleOvalLeftEllipsisIcon
-            onClick={() => {
-              if (!session?.user?.id) {
-                router.push("/signin");
-                return;
-              } else {
-                setPostId(post.id);
-                setOpen(!open);
-              }
-            }}
-            className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
+          <div>
+            <ChatBubbleOvalLeftEllipsisIcon
+              onClick={() => {
+                if (!session?.user?.id) {
+                  router.push("/signin");
+                  return;
+                } else {
+                  setPostId(post.id);
+                  setOpen(!open);
+                }
+              }}
+              className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
             hover:text-purple-500"
-          />
+            />
+            {comments.length > 0 && (
+              <span className="text-sm ml-1">{comments.length}</span>
+            )}
+          </div>
           {session?.user.id === post.user_id && (
             <TrashIcon
               onClick={deletePost}
