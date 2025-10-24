@@ -231,7 +231,7 @@ export default function Post({ post }: PostProps) {
           />
         )}
         <div className="flex justify-between text-gray-500 p-2 mt-1">
-          <div>
+          <div className="flex items-center select-none">
             <ChatBubbleOvalLeftEllipsisIcon
               onClick={() => {
                 if (!session?.user?.id) {
@@ -246,7 +246,7 @@ export default function Post({ post }: PostProps) {
             hover:text-purple-500"
             />
             {comments.length > 0 && (
-              <span className="text-sm ml-1">{comments.length}</span>
+              <span className="text-sm">{comments.length}</span>
             )}
           </div>
           {session?.user.id === post.user_id && (
