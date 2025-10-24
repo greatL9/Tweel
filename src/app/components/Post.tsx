@@ -54,16 +54,17 @@ export default function Post({ post }: PostProps) {
 
   useEffect(() => {
     const fetchLikes = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("likes")
         .select("*")
         .eq("post_id", post.id);
-      if (data) setLikes(data);
+      if (!error && data) setLikes(data);
     };
+
     fetchLikes();
 
-    const likesChannel = supabase
-      .channel(`likes-post-${post.id}`)
+    const subscription = supabase
+      .channel(`public:likes-post-${post.id}`)
       .on(
         "postgres_changes",
         {
@@ -72,18 +73,14 @@ export default function Post({ post }: PostProps) {
           table: "likes",
           filter: `post_id=eq.${post.id}`,
         },
-        async () => {
-          const { data, error } = await supabase
-            .from("likes")
-            .select("*")
-            .eq("post_id", post.id);
-          if (!error && data) setLikes(data);
+        () => {
+          fetchLikes();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(subscription);
     };
   }, [post.id, supabase]);
 
@@ -99,35 +96,35 @@ export default function Post({ post }: PostProps) {
     }
 
     if (hasLiked) {
-      const { error } = await supabase
+      setHasLiked(false);
+      setLikes((prev) =>
+        prev.filter((like) => like.user_id !== session.user.id)
+      );
+
+      await supabase
         .from("likes")
         .delete()
         .eq("post_id", post.id)
-        .eq("user_id", session?.user.id);
-      if (error) {
-        console.error("Error unliking post:", error);
-      } else {
-        console.log("Post unliked!");
-      }
-      setHasLiked(false);
-      setLikes((prev) =>
-        prev.filter((like) => like.user_id !== session?.user.id)
-      );
+        .eq("user_id", session.user.id);
     } else {
-      const { error } = await supabase.from("likes").insert([
+      setHasLiked(true);
+      setLikes((prev) => [
+        ...prev,
         {
+          id: crypto.randomUUID(),
           post_id: post.id,
-          user_id: session?.user.id,
+          user_id: session.user.id,
           user_name: username,
         },
       ]);
 
-      if (error) {
-        console.error("Error liking post:", error);
-      } else {
-        console.log("Post liked!");
-      }
-      setHasLiked(true);
+      await supabase.from("likes").insert([
+        {
+          post_id: post.id,
+          user_id: session.user.id,
+          user_name: username,
+        },
+      ]);
     }
   };
 
@@ -175,7 +172,7 @@ export default function Post({ post }: PostProps) {
         priority={false}
       />
 
-      <div>
+      <div className="flex-1">
         <div className="flex items-center justify-between">
           <div className="flex space-x-1 whitespace-nowrap items-center">
             <h4 className="font-bold text-[15px] sm:text-[16px] hover:underline">

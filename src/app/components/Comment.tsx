@@ -13,6 +13,7 @@ import { createClient } from "../../../utils/supabase/client";
 import Image from "next/image";
 import dayjs from "dayjs";
 import { useSession } from "./SessionProvider";
+import { useRouter } from "next/navigation";
 
 interface Post {
   id: string;
@@ -30,9 +31,7 @@ export default function Comment() {
   const [postId] = useAtom(postIdState);
   const session = useSession();
   const [input, setInput] = useState("");
-
-  //   const session = supabase.auth.getSession();
-  //   console.log(session);
+  const router = useRouter();
 
   useEffect(() => {
     if (!postId) return;
@@ -76,7 +75,30 @@ export default function Comment() {
     };
   }, [postId, supabase]);
 
-  const sendComment = () => {};
+  const sendComment = async () => {
+    if (!input.trim() || !session?.user || !postId) return;
+
+    try {
+      const { error } = await supabase.from("comments").insert([
+        {
+          post_id: postId,
+          comment: input,
+          name: session.user.user_metadata?.name,
+          user_name: session.user.user_metadata?.user_name,
+          user_image: session.user.user_metadata?.picture,
+          user_id: session.user.id,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      if (error) throw error;
+
+      setOpen(false);
+      setInput("");
+    } catch (error) {
+      console.error("Error sending comment:", error);
+    }
+  };
 
   return (
     <div>
