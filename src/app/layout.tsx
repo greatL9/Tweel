@@ -4,7 +4,7 @@ import { createClient } from "../../utils/supabase/server";
 import { SessionProvider } from "./components/SessionProvider";
 import { getNews, getUsers } from "./data";
 import { DataProvider } from "./providers/dataProvider";
-import Comment from "./components/Comment";
+import Comment from "./components/CommentModal";
 
 export const metadata: Metadata = {
   title: {

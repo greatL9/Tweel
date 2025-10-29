@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import Post from "@/app/components/Post";
 import { useEffect, useState } from "react";
 import { createClient } from "../../../../utils/supabase/client";
+import Comment from "@/app/components/Comment";
 
 interface Post {
   id: string;
@@ -19,12 +20,21 @@ interface Post {
   text: string;
   timestamp: string;
 }
+interface Comment {
+  id: string;
+  name: string;
+  user_name: string;
+  user_image: string;
+  user_id: string;
+  comment: string;
+}
 
 export default function PostPage() {
   const supabase = createClient();
   const { newsResults, randomUsersResults } = useData();
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>();
+  const [comments, setComments] = useState<Comment[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,7 +51,20 @@ export default function PostPage() {
 
     fetchPost();
 
-    const channel = supabase
+    const fetchComments = async () => {
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .eq("post_id", id)
+        .order("created_at", { ascending: false });
+
+      if (error) console.error("Error fetching comments:", error);
+      else setComments(data || []);
+    };
+
+    fetchComments();
+
+    const postSubscription = supabase
       .channel(`posts:id=eq.${id}`)
       .on(
         "postgres_changes",
@@ -59,8 +82,25 @@ export default function PostPage() {
       )
       .subscribe();
 
+    const commentsSubscription = supabase
+      .channel(`public:comments:post_id=eq.${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments",
+          filter: `post_id=eq.${id}`,
+        },
+        () => {
+          fetchComments();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(postSubscription);
+      supabase.removeChannel(commentsSubscription);
     };
   }, [id, supabase]);
 
@@ -80,6 +120,14 @@ export default function PostPage() {
         ) : (
           <div className="p-5 text-center text-gray-500">Loading post...</div>
         )}
+        {comments.length > 0 &&
+          comments.map((comment) => (
+            <Comment
+              key={comment.id}
+              comment={comment.comment}
+              id={comment.id}
+            />
+          ))}
       </div>
       <Widgets
         newsResults={newsResults}
