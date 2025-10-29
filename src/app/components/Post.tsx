@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { HeartIcon as HeartIconFilled } from "@heroicons/react/16/solid";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { commentState, postIdState } from "@/store/commentAtom";
+import { commentState, postIdState } from "../../../store/commentAtom";
 
 interface PostProps {
   post: {
@@ -29,6 +29,7 @@ interface PostProps {
     text: string;
     timestamp: string;
   };
+  id: string;
 }
 
 interface Like {
@@ -49,7 +50,7 @@ interface Comment {
   timestamp: string;
 }
 
-export default function Post({ post }: PostProps) {
+export default function Post({ post, id }: PostProps) {
   const [likes, setLikes] = useState<Like[]>([]);
   const [hasLiked, setHasLiked] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -69,7 +70,7 @@ export default function Post({ post }: PostProps) {
       const { data, error } = await supabase
         .from("likes")
         .select("*")
-        .eq("post_id", post.id);
+        .eq("post_id", id);
       if (!error && data) setLikes(data);
     };
 
@@ -77,7 +78,7 @@ export default function Post({ post }: PostProps) {
       const { data, error } = await supabase
         .from("comments")
         .select("*")
-        .eq("post_id", post.id);
+        .eq("post_id", id);
       if (!error && data) setComments(data);
     };
 
@@ -85,14 +86,14 @@ export default function Post({ post }: PostProps) {
     fetchLikes();
 
     const likeSubscription = supabase
-      .channel(`public:likes-post-${post.id}`)
+      .channel(`public:likes-post-${id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "likes",
-          filter: `post_id=eq.${post.id}`,
+          filter: `post_id=eq.${id}`,
         },
         () => {
           fetchLikes();
@@ -101,14 +102,14 @@ export default function Post({ post }: PostProps) {
       .subscribe();
 
     const commentSubscription = supabase
-      .channel(`public:comments-post-${post.id}`)
+      .channel(`public:comments-post-${id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "comments",
-          filter: `post_id=eq.${post.id}`,
+          filter: `post_id=eq.${id}`,
         },
         () => fetchComments()
       )
@@ -118,7 +119,7 @@ export default function Post({ post }: PostProps) {
       supabase.removeChannel(likeSubscription);
       supabase.removeChannel(commentSubscription);
     };
-  }, [post.id, supabase]);
+  }, [id, supabase]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -135,7 +136,7 @@ export default function Post({ post }: PostProps) {
       const { error } = await supabase
         .from("likes")
         .delete()
-        .eq("post_id", post.id)
+        .eq("post_id", id)
         .eq("user_id", session?.user.id);
 
       if (error) console.error("Error unliking post:", error);
@@ -182,9 +183,10 @@ export default function Post({ post }: PostProps) {
       const { error: postError } = await supabase
         .from("posts")
         .delete()
-        .eq("id", post.id)
+        .eq("id", id)
         .eq("user_id", session?.user.id);
 
+      router.push("/");
       if (postError) console.error("Error deleting post:", postError.message);
     } catch (err) {
       console.error("Unexpected delete error:", err);
@@ -238,7 +240,7 @@ export default function Post({ post }: PostProps) {
                   router.push("/signin");
                   return;
                 } else {
-                  setPostId(post.id);
+                  setPostId(id);
                   setOpen(!open);
                 }
               }}

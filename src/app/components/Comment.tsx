@@ -7,7 +7,7 @@ import {
   PhotoIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { commentState, postIdState } from "@/store/commentAtom";
+import { commentState, postIdState } from "../../../store/commentAtom";
 import { useEffect, useState } from "react";
 import { createClient } from "../../../utils/supabase/client";
 import Image from "next/image";
@@ -95,6 +95,7 @@ export default function Comment() {
 
       setOpen(false);
       setInput("");
+      router.push(`/posts/${postId}`);
     } catch (error) {
       console.error("Error sending comment:", error);
     }
