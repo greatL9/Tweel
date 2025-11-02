@@ -32,6 +32,8 @@ export default function Comment() {
   const session = useSession();
   const [input, setInput] = useState("");
   const router = useRouter();
+  const name = session?.user.user_metadata?.name || "";
+  const username = name.split(" ").join("").toLowerCase();
 
   useEffect(() => {
     if (!postId) return;
@@ -84,7 +86,7 @@ export default function Comment() {
           post_id: postId,
           comment: input,
           name: session.user.user_metadata?.name,
-          user_name: session.user.user_metadata?.user_name,
+          user_name: username,
           user_image: session.user.user_metadata?.picture,
           user_id: session.user.id,
           created_at: new Date().toISOString(),

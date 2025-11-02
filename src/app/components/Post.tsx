@@ -30,6 +30,7 @@ interface PostProps {
     timestamp: string;
   };
   id: string;
+  commentCount?: number;
 }
 
 interface Like {
@@ -39,21 +40,10 @@ interface Like {
   user_name: string;
 }
 
-interface Comment {
-  id: string;
-  name: string;
-  user_name: string;
-  user_image: string;
-  user_id: string;
-  image: string;
-  text: string;
-  timestamp: string;
-}
-
-export default function Post({ post, id }: PostProps) {
+export default function Post({ post, id, commentCount }: PostProps) {
   const [likes, setLikes] = useState<Like[]>([]);
   const [hasLiked, setHasLiked] = useState(false);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsCount, setCommentsCount] = useState<number>(commentCount ?? 0);
   const [open, setOpen] = useAtom(commentState);
   const [postId, setPostId] = useAtom(postIdState);
 
@@ -70,23 +60,15 @@ export default function Post({ post, id }: PostProps) {
       const { data, error } = await supabase
         .from("likes")
         .select("*")
-        .eq("post_id", id);
+        .eq("post_id", id)
+        .is("comment_id", null); //exclude comment likes
       if (!error && data) setLikes(data);
     };
 
-    const fetchComments = async () => {
-      const { data, error } = await supabase
-        .from("comments")
-        .select("*")
-        .eq("post_id", id);
-      if (!error && data) setComments(data);
-    };
-
-    fetchComments();
     fetchLikes();
 
     const likeSubscription = supabase
-      .channel(`public:likes-post-${id}`)
+      .channel(`likes:post-${id}`)
       .on(
         "postgres_changes",
         {
@@ -101,8 +83,31 @@ export default function Post({ post, id }: PostProps) {
       )
       .subscribe();
 
+    return () => {
+      supabase.removeChannel(likeSubscription);
+    };
+  }, [id, supabase]);
+
+  const shouldFetchComments = commentCount === undefined;
+
+  useEffect(() => {
+    if (!shouldFetchComments) {
+      setCommentsCount(commentCount || 0);
+      return;
+    }
+
+    const fetchCommentCount = async () => {
+      const { count } = await supabase
+        .from("comments")
+        .select("*", { count: "exact", head: true })
+        .eq("post_id", id);
+      setCommentsCount(count || 0);
+    };
+
+    fetchCommentCount();
+
     const commentSubscription = supabase
-      .channel(`public:comments-post-${id}`)
+      .channel(`comments:post-${id}`)
       .on(
         "postgres_changes",
         {
@@ -111,15 +116,14 @@ export default function Post({ post, id }: PostProps) {
           table: "comments",
           filter: `post_id=eq.${id}`,
         },
-        () => fetchComments()
+        fetchCommentCount
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(likeSubscription);
       supabase.removeChannel(commentSubscription);
     };
-  }, [id, supabase]);
+  }, [id, supabase, commentCount]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -146,13 +150,17 @@ export default function Post({ post, id }: PostProps) {
         prev.filter((like) => like.user_id !== session?.user.id)
       );
     } else {
-      const { error } = await supabase.from("likes").insert([
-        {
-          post_id: post.id,
-          user_id: session?.user.id,
-          user_name: username,
-        },
-      ]);
+      const { error } = await supabase
+        .from("likes")
+        .insert([
+          {
+            post_id: post.id,
+            user_id: session?.user.id,
+            user_name: username,
+          },
+        ])
+        .select()
+        .single();
 
       if (error) console.error("Error liking post:", error);
 
@@ -193,6 +201,8 @@ export default function Post({ post, id }: PostProps) {
     }
   };
 
+  const displayedCommentCount =
+    commentCount !== undefined ? commentCount : commentsCount;
   return (
     <div className="flex p-3 cursor-pointer border-b border-gray-200">
       <Image
@@ -218,11 +228,15 @@ export default function Post({ post, id }: PostProps) {
           </div>
           <EllipsisHorizontalCircleIcon className="h-10 hoverEffect w-10 hover:bg-purple-100 hover:text-purple-500 p-2" />
         </div>
-        <p className="text-gray-800 text-[15px] sm:text-[16px] mb-4">
+        <p
+          onClick={() => router.push(`/posts/${id}`)}
+          className="text-gray-800 text-[15px] sm:text-[16px] mb-4"
+        >
           {post.text}
         </p>
         {post.image && (
           <Image
+            onClick={() => router.push(`/posts/${id}`)}
             src={post.image}
             alt="post"
             width={600}
@@ -247,8 +261,8 @@ export default function Post({ post, id }: PostProps) {
               className="h-9 w-9 hoverEffect p-2 hover:bg-purple-100
             hover:text-purple-500"
             />
-            {comments.length > 0 && (
-              <span className="text-sm">{comments.length}</span>
+            {displayedCommentCount > 0 && (
+              <span className="text-sm">{displayedCommentCount}</span>
             )}
           </div>
           {session?.user.id === post.user_id && (

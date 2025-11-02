@@ -20,19 +20,22 @@ interface Post {
   text: string;
   timestamp: string;
 }
+
 interface Comment {
   id: string;
+  commentId: string;
   name: string;
   user_name: string;
   user_image: string;
   user_id: string;
   comment: string;
+  created_at: string;
 }
 
 export default function PostPage() {
   const supabase = createClient();
   const { newsResults, randomUsersResults } = useData();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>();
   const [comments, setComments] = useState<Comment[]>([]);
   const router = useRouter();
@@ -59,9 +62,8 @@ export default function PostPage() {
         .order("created_at", { ascending: false });
 
       if (error) console.error("Error fetching comments:", error);
-      else setComments(data || []);
+      else setComments(data);
     };
-
     fetchComments();
 
     const postSubscription = supabase
@@ -83,17 +85,18 @@ export default function PostPage() {
       .subscribe();
 
     const commentsSubscription = supabase
-      .channel(`public:comments:post_id=eq.${id}`)
+      .channel("public:comments")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "comments",
-          filter: `post_id=eq.${id}`,
-        },
-        () => {
-          fetchComments();
+        { event: "*", schema: "public", table: "comments" },
+        (payload) => {
+          if (
+            payload.eventType === "DELETE" ||
+            payload.eventType === "INSERT" ||
+            payload.eventType === "UPDATE"
+          ) {
+            fetchComments();
+          }
         }
       )
       .subscribe();
@@ -116,7 +119,7 @@ export default function PostPage() {
           <div className="hoverEffect justify-center items-center flex px-0 ml-auto w-9 h-9"></div>
         </div>
         {post ? (
-          <Post post={post} id={post.id} />
+          <Post post={post} id={post.id} commentCount={comments.length} />
         ) : (
           <div className="p-5 text-center text-gray-500">Loading post...</div>
         )}
@@ -124,8 +127,9 @@ export default function PostPage() {
           comments.map((comment) => (
             <Comment
               key={comment.id}
-              comment={comment.comment}
-              id={comment.id}
+              comment={comment}
+              commentId={comment.id}
+              id={id}
             />
           ))}
       </div>

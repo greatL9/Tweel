@@ -14,6 +14,7 @@ export default function Input() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const filePickerRef = useRef<HTMLInputElement>(null);
+
   const uploadImage = async (file: File) => {
     const filePath = `${session?.user?.id}/${Date.now()}-${file.name}`;
 
