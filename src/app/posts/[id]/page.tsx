@@ -9,6 +9,7 @@ import Post from "@/app/components/Post";
 import { useEffect, useState } from "react";
 import { createClient } from "../../../../utils/supabase/client";
 import Comment from "@/app/components/Comment";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Post {
   id: string;
@@ -123,15 +124,27 @@ export default function PostPage() {
         ) : (
           <div className="p-5 text-center text-gray-500">Loading post...</div>
         )}
-        {comments.length > 0 &&
-          comments.map((comment) => (
-            <Comment
-              key={comment.id}
-              comment={comment}
-              commentId={comment.id}
-              id={id}
-            />
-          ))}
+        <div>
+          <AnimatePresence>
+            {comments.length > 0 &&
+              comments.map((comment) => (
+                <motion.div
+                  key={comment.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1 }}
+                >
+                  <Comment
+                    key={comment.id}
+                    comment={comment}
+                    commentId={comment.id}
+                    id={id}
+                  />
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </div>
       </div>
       <Widgets
         newsResults={newsResults}
